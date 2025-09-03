@@ -100,17 +100,49 @@ function render() {
         li.appendChild(checkbox);
         li.appendChild(label);
 
+        li.className = 'todo-item';
+        if (todo.completed) {
+            li.classList.add('completed');
+        };
+
         elements.list.appendChild(li);
     });
     elements.totalSpan.textContent = String(state.todos.length);
 };
+
+// ====== Переключение статуса задачи ======
+
+function toggleTodo(id, completed) {
+    state.todos = state.todos.map(todo => {
+        if (todo.id === id) {
+            return {
+                id: todo.id,
+                title: todo.title,
+                completed: completed,
+                reminderAt: todo.reminderAt
+            };
+        }
+    });
+    saveToStorage(state.todos);
+    render();
+};
+
+function handleListChange(event) {
+    const target = event.target;
+    if (!target || !target.classList.contains('todo-item-checkbox')) return;
+
+    const idStr = String(target.id).replace('todo-', '');
+    const id = Number(idStr);
+
+    toggleTodo(id, target.checked);
+}
 
 // ====== Добавление задач ======
 
 function generateId() {
     return Date.now();
 
-}
+};
 
 function addTodo(title) {
     const trimmed = title.trim();
@@ -124,15 +156,40 @@ function addTodo(title) {
         completed: false,
         reminderAt: null
     };
-}
 
+    // кладём задачу в начало массива, чтобы новая была сверху
+    state.todos = [newTodo].concat(state.todos);
+
+    saveToStorage(state.todos),
+        render();
+
+    if (elements.input) {
+        elements.input.value = '';
+    };
+};
+
+// Обработчик формы "Add"
+function handleFormSubmit(event) {
+    event.preventDefault(); // не даём странице перезагружаться
+    if (!elements.input) return;
+
+    addTodo(elements.input.value);
+};
 
 // ====== Инициализация ======
 
 async function init() {
     getElements();
 
-    // 1) Пытаемся прочитать локальные данные
+    if (elements.list) {
+        elements.list.addEventListener('change', handleListChange);
+    }
+
+    if (elements.form) {
+        elements.form.addEventListener('submit', handleFormSubmit);
+    }
+
+    // 1)  читаем локальные данные
     const stored = readFromStorage();
 
     if (stored && stored.length > 0) {
@@ -149,6 +206,6 @@ async function init() {
         // На крайний случай — пустой список
         setTodos([]);
     }
-}
+};
 
 document.addEventListener('DOMContentLoaded', init);

@@ -170,3 +170,8 @@ body {
 .todo-item-checkbox:checked + .todo-item-label::after {
     opacity: 1;
 }
+
+.todo-item.completed .todo-item-label {
+    text-decoration: line-through;
+    color: #9E9E9E;
+}
