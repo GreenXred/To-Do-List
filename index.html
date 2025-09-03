@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./styles.css/fonst.css">
+    <link rel="stylesheet" href="./styles.css/normalize.css">
+    <link rel="stylesheet" href="./styles.css/index.css">
+    <title>To Do List</title>
+</head>
+
+<body>
+    <div class="todo-container">
+        <img class="theme-icon" src="./icons/icon-theme.png" alt="Change theme">
+        <h1 class="title">To Do List</h1>
+        <form class="new-task-input" action="">
+            <input type="text" placeholder="Enter a new task" class="new-task-input-field">
+            <button class="new-task-button">Add</button>
+        </form>
+        <div class="filter-task">
+            <button id="filter-button" class="all-task-button" type="button">All tasks</button>
+            <button id="filter-button" class="completed-task-button" type="button">Completed tasks</button>
+            <button id="filter-button" class="pending-task-button" type="button">Pending tasks</button>
+        </div>
+        <div class="todo-info">
+            <div class="total-tasks">
+                Total tasks: <span>0</span>
+            </div>
+            <button class="delete-all-buttons" type="button">
+                Delete all
+            </button>
+        </div>
+        <ul class="todo-list">
+            <li class="todo-item">
+                <input id="todo-1" type="checkbox" class="todo-item-checkbox">
+                <label for="todo-1" class="todo-item-label">
+                    Todo 1
+                </label>
+                <img class="timer-icon" src="./icons/icon-stopwatch.svg" alt="Timer">
+                <button class="todo-item-delete-button" type="button">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 5L5 15M5 5L15 15" stroke="#757575" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </li>
+            <li class="todo-item">
+                <input id="todo-1" type="checkbox" class="todo-item-checkbox">
+                <label for="todo-1" class="todo-item-label">
+                    Todo 1
+                </label>
+                <button class="todo-item-delete-button" type="button">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 5L5 15M5 5L15 15" stroke="#757575" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </li>
+        </ul>
+    </div>
+
+
+    <script src="./script.js"></script>
+</body>
+
+</html>
