@@ -1,3 +1,4 @@
+
 * {
     border-radius: 8px;
     font-weight: 400;
@@ -13,28 +14,31 @@
 }
 
 body {
-    background-color: #f4f4f4;
+    background-color: var(--bg);
+    color: var(--text);
     font-family: 'Inter', sans-serif;
+    min-height: 100svh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
 }
 
 .todo-container {
     display: flex;
     flex-direction: column;
     gap: 24px;
-    justify-self: center;
-    transform: translateY(50%);
-    background-color: white;
-    border: 1px solid #D9D9D9;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
     padding: 24px;
+    width: 480px;
 }
 
 .todo-container .theme-icon {
-    width: 24px; 
-    height: 24px; 
+    width: 24px;
+    height: 24px;
     position: absolute;
     cursor: pointer;
-    top: 10px;
-    left: 10px;
 }
 
 .title {
@@ -49,22 +53,31 @@ body {
 }
 
 .new-task-input-field {
-    width: 285px;
+    width: 360px;
     border: 1px solid #D9D9D9;
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: transparent;
 }
 
 .new-task-button {
     padding: 7px;
-    background-color: #2C2C2C;
-    color: #F5F5F5;
-    border: 1px solid #2C2C2C;
+    background-color: var(--primary);
+    color: var(--primary-text);
+    border: 1px solid var(--primary);  
+}
+
+.filter-task {
+    display: flex;
+    gap: 15px;
+    justify-content: space-between;
 }
 
 #filter-button {
     padding: 7px;
-    background-color: #2C2C2C;
-    color: #F5F5F5;
-    border: 1px solid #2C2C2C;
+    background-color: var(--primary);
+    color: var(--primary-text);
+    border: 1px solid var(--primary);
 }
 
 .todo-info {
@@ -81,6 +94,7 @@ body {
     border: none;
     background: none;
     font-weight: 600;
+    color: var(--text);
 }
 
 .todo-list {
@@ -91,29 +105,38 @@ body {
 
 .todo-item {
     display: flex;
-    align-items: center;
+    align-items: center;      
     justify-content: flex-start;
     gap: 12px;
-    height: 50px;
-    border: 1px solid #D9D9D9;
+    min-height: 50px;        
+    border: 1px solid var(--border);
+    padding: 4px 0;        
 }
 
 .todo-item .timer-icon {
-    width: 19px; 
-    height: 17px; 
+    width: 19px;
+    height: 17px;
     cursor: pointer;
+    filter: brightness(0) saturate(100%) invert(0) sepia(0) saturate(0) hue-rotate(0deg) brightness(1);
 }
 
+body.dark .todo-item .timer-icon {
+    filter: brightness(0) saturate(100%) invert(100%) sepia(0) saturate(0) hue-rotate(0deg) brightness(1);
+}
 
 .todo-item-label {
     flex-grow: 1;
+    white-space: normal;    
+    word-break: break-word;   
+    overflow-wrap: anywhere;  
+    line-height: 1.4;
 }
 
 .todo-item-delete-button {
     margin-left: auto;
     border: none;
     background: none;
-    color: #757575;
+    color: var(--muted);
     padding-right: 10px;
     margin-top: 7px;
 }
@@ -141,8 +164,8 @@ body {
     transform: translateY(-50%);
     width: 20px;
     height: 20px;
-    background: white;
-    border: 1px solid #2C2C2C;
+    background: transparent;
+    border: 1px solid var(--primary);
     border-radius: 4px;
 }
 
@@ -154,24 +177,40 @@ body {
     top: 45%;
     width: 6px;
     height: 12px;
-    border: solid white;
+    border: solid var(--primary-text);
     border-width: 0 2px 2px 0;
     transform: translateY(-50%) rotate(45deg);
-    opacity: 0; /* скрыта, пока чекбокс не активен */
+    opacity: 0;
+    /* скрыта, пока чекбокс не активен */
 }
 
 /* Когда чекбокс отмечен */
-.todo-item-checkbox:checked + .todo-item-label::before {
-    background: #2C2C2C; 
-    border-color: #2C2C2C;
+.todo-item-checkbox:checked+.todo-item-label::before {
+    background: var(--primary);
+    border-color: var(--primary);
 }
 
 /* Показываем белую галочку */
-.todo-item-checkbox:checked + .todo-item-label::after {
+.todo-item-checkbox:checked+.todo-item-label::after {
     opacity: 1;
 }
 
+/* Перечеркивание выполненных задач */
 .todo-item.completed .todo-item-label {
     text-decoration: line-through;
     color: #9E9E9E;
+}
+
+/* обозначение активной кнопки фильтра */
+.is-active {
+    outline: 2px solid var(--primary);
+}
+
+/* иконка переключения темы */
+.theme-icon {
+    filter: brightness(0) saturate(100%) invert(0);
+}
+
+body.dark .theme-icon {
+    filter: brightness(0) saturate(100%) invert(100%);
 }

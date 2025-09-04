@@ -1,0 +1,25 @@
+/* Светлая тема (по умолчанию) */
+:root {
+    --bg: #f4f4f4;
+    --card-bg: #ffffff;
+    --text: #2C2C2C;
+    --muted: #757575;
+    --border: #D9D9D9;
+    --primary: #2C2C2C;
+    --primary-text: #F5F5F5;
+
+    --icon-color: #2C2C2C;  
+}
+
+/* Тёмная тема */
+body.dark {
+    --bg: #0F1113;
+    --card-bg: #171A1D;
+    --text: #EAECEF;
+    --muted: #9AA3AB;
+    --border: #2A2F34;
+    --primary: #2F6FED;
+    --primary-text: #FFFFFF;
+
+    --icon-color: #EAECEF;  
+}

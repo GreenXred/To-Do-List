@@ -1,5 +1,25 @@
 const apiUrl = 'https://jsonplaceholder.typicode.com/todos';
-const storageKey = 'todo_list_storage';
+const storageKey = 'todo-list-storage';
+const themeKey = 'todoTheme';
+
+
+// ====== Функция переключение темы ======
+
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        document.body.classList.add('dark');
+    } else {
+        document.body.classList.remove('dark');
+    };
+};
+
+function toggleTheme() {
+    const current = localStorage.getItem(themeKey) || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(themeKey, next);
+    applyTheme(next);
+};
+
 
 const state = { // здесь храним текущий список задач и фильтр
     todos: [],
@@ -81,10 +101,18 @@ function setTodos(todos) {
 function render() {
     elements.list.innerHTML = '';
 
-    const todosToShow = state.todos;
+    // фильтр из state.filter
+    let todosToShow = state.todos;
+    if (state.filter === 'completed') {
+        todosToShow = state.todos.filter(t => t.completed);
+    } else if (state.filter === 'pending') {
+        todosToShow = state.todos.filter(t => !t.completed);
+    }
+
     todosToShow.forEach(todo => {
         const li = document.createElement('li');
         li.className = 'todo-item';
+        if (todo.completed) li.classList.add('completed');
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -97,17 +125,82 @@ function render() {
         label.htmlFor = checkbox.id;
         label.textContent = todo.title;
 
+        const timerIcon = document.createElement('img');
+        timerIcon.className = 'timer-icon';
+        timerIcon.src = './icons/icon-stopwatch.svg';
+        timerIcon.alt = 'Timer';
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'todo-item-delete-button';
+        delBtn.setAttribute('data-id', String(todo.id));
+        delBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <path d="M15 5L5 15M5 5L15 15"
+                stroke="#757575" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      `;
+
         li.appendChild(checkbox);
         li.appendChild(label);
-
-        li.className = 'todo-item';
-        if (todo.completed) {
-            li.classList.add('completed');
-        };
+        li.appendChild(timerIcon);
+        li.appendChild(delBtn);
 
         elements.list.appendChild(li);
     });
+
     elements.totalSpan.textContent = String(state.todos.length);
+};
+
+// ====== Удаление задач ======
+
+function removeTodo(id) {
+    state.todos = state.todos.filter(todo => todo.id !== id);
+    saveToStorage(state.todos);
+    render();
+};
+
+function removeAllTodos() {
+    state.todos = [];
+    saveToStorage(state.todos);
+    render();
+};
+
+function handleListClick(event) {
+    const target = event.target;
+
+    //  Удаление 
+    const delBtn = target.closest('.todo-item-delete-button');
+    if (delBtn && elements.list.contains(delBtn)) {
+        const id = Number(delBtn.getAttribute('data-id'));
+        removeTodo(id);
+        return;
+    }
+
+    //  Таймер 
+    const timer = target.closest('.timer-icon');
+    if (timer && elements.list.contains(timer)) {
+        const li = timer.closest('.todo-item');
+        const label = li.querySelector('.todo-item-label');
+        const taskTitle = label ? label.textContent : 'задача';
+
+        const secStr = prompt('Через сколько секунд напомнить?');
+        if (secStr === null) {
+            return; // если отмена
+        }
+
+        const seconds = Number(secStr);
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+            alert('Введите положительное число секунд.');
+            return;
+        }
+
+        setTimeout(() => {
+            alert('Пора выполнить задачу - ' + taskTitle);
+        }, seconds * 1000);
+    }
 };
 
 // ====== Переключение статуса задачи ======
@@ -115,13 +208,9 @@ function render() {
 function toggleTodo(id, completed) {
     state.todos = state.todos.map(todo => {
         if (todo.id === id) {
-            return {
-                id: todo.id,
-                title: todo.title,
-                completed: completed,
-                reminderAt: todo.reminderAt
-            };
+            return { id: todo.id, title: todo.title, completed, reminderAt: todo.reminderAt };
         }
+        return todo;
     });
     saveToStorage(state.todos);
     render();
@@ -135,7 +224,7 @@ function handleListChange(event) {
     const id = Number(idStr);
 
     toggleTodo(id, target.checked);
-}
+};
 
 // ====== Добавление задач ======
 
@@ -178,8 +267,58 @@ function handleFormSubmit(event) {
 
 // ====== Инициализация ======
 
+function setFilter(next) {
+    state.filter = next;      // 'all' | 'completed' | 'pending'
+    highlightActiveFilter();
+    render();
+};
+
+function highlightActiveFilter() {
+    //  подсветка активной 
+    const { filterAllBtn, filterCompletedBtn, filterPendingBtn } = elements;
+    [filterAllBtn, filterCompletedBtn, filterPendingBtn].forEach(btn => {
+        if (!btn) return;
+        btn.classList.remove('is-active');
+    });
+
+    if (state.filter === 'all' && elements.filterAllBtn) {
+        elements.filterAllBtn.classList.add('is-active');
+    } else if (state.filter === 'completed' && elements.filterCompletedBtn) {
+        elements.filterCompletedBtn.classList.add('is-active');
+    } else if (state.filter === 'pending' && elements.filterPendingBtn) {
+        elements.filterPendingBtn.classList.add('is-active');
+    }
+};
+
 async function init() {
     getElements();
+
+    // сохранённея тема
+    const saved = localStorage.getItem(themeKey) || 'light';
+    applyTheme(saved);
+
+    const themeIcon = document.querySelector('.theme-icon');
+    if (themeIcon) {
+        themeIcon.addEventListener('click', toggleTheme);
+    }
+
+    if (elements.filterAllBtn) {
+        elements.filterAllBtn.addEventListener('click', () => setFilter('all'));
+    }
+    if (elements.filterCompletedBtn) {
+        elements.filterCompletedBtn.addEventListener('click', () => setFilter('completed'));
+    }
+    if (elements.filterPendingBtn) {
+        elements.filterPendingBtn.addEventListener('click', () => setFilter('pending'));
+    }
+
+    if (elements.list) {
+        elements.list.addEventListener('click', handleListClick);
+    }
+
+    if (elements.deleteAllBtn) {
+        elements.deleteAllBtn.addEventListener('click', removeAllTodos);
+    }
 
     if (elements.list) {
         elements.list.addEventListener('change', handleListChange);
@@ -206,6 +345,8 @@ async function init() {
         // На крайний случай — пустой список
         setTodos([]);
     }
+
+    highlightActiveFilter();
 };
 
 document.addEventListener('DOMContentLoaded', init);
