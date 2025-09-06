@@ -247,7 +247,7 @@ function handleListClick(event) {
     //  Удаление 
     const delBtn = target.closest('.todo-item-delete-button');
     if (delBtn && elements.list.contains(delBtn)) {
-        const id = Number(delBtn.getAttribute('data-id'));
+        const id = delBtn.getAttribute('data-id');
         removeTodo(id);
         return;
     }
@@ -257,7 +257,7 @@ function handleListClick(event) {
     if (timer && elements.list.contains(timer)) {
         const li = timer.closest('.todo-item');
         const checkbox = li.querySelector('.todo-item-checkbox');
-        const id = Number(checkbox.id.replace('todo-', ''));
+        const id = checkbox.id.replace('todo-', '');
         const todo = state.todos.find(t => t.id === id);
         if (!todo) return;
 
@@ -285,7 +285,7 @@ function handleListClick(event) {
     // убрать напоминание
     const reminderLabel = target.closest('.reminder-label');
     if (reminderLabel && elements.list.contains(reminderLabel)) {
-        const id = Number(reminderLabel.dataset.id);
+        const id = reminderLabel.dataset.id;
         const todo = state.todos.find(t => t.id === id);
         if (todo && todo.reminderAt) {
             if (confirm("Убрать напоминание?")) {
@@ -332,7 +332,7 @@ function handleListChange(event) {
     if (!target || !target.classList.contains('todo-item-checkbox')) return;
 
     const idStr = String(target.id).replace('todo-', '');
-    const id = Number(idStr);
+    const id = idStr;
 
     toggleTodo(id, target.checked);
 };
@@ -340,7 +340,7 @@ function handleListChange(event) {
 // ====== Добавление задач ======
 
 function generateId() {
-    return Date.now();
+    return crypto.randomUUID();
 
 };
 
