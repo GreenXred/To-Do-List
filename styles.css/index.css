@@ -203,7 +203,8 @@ body.dark .todo-item .timer-icon {
 
 /* обозначение активной кнопки фильтра */
 .is-active {
-    outline: 2px solid var(--primary);
+    outline: 5px solid var(--primary);
+    
 }
 
 /* иконка переключения темы */
