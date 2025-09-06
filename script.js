@@ -78,6 +78,15 @@ function scheduleReminder(todo) {
         delete reminderTimers[todo.id];
     }
 
+    // Для выполненных — не планируем и обнуляем reminderAt
+    if (todo.completed) {
+        if (todo.reminderAt) {
+            todo.reminderAt = null;
+            saveToStorage(state.todos);
+        }
+        return;
+    }
+
     if (!todo.reminderAt) return;
 
     const delay = todo.reminderAt - Date.now();
@@ -151,22 +160,41 @@ function render() {
         li.className = 'todo-item';
         if (todo.completed) li.classList.add('completed');
 
+        // чекбокс
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.className = 'todo-item-checkbox';
         checkbox.id = 'todo-' + String(todo.id);
         checkbox.checked = todo.completed;
 
+        // текст
         const label = document.createElement('label');
         label.className = 'todo-item-label';
         label.htmlFor = checkbox.id;
         label.textContent = todo.title;
 
-        const timerIcon = document.createElement('img');
-        timerIcon.className = 'timer-icon';
-        timerIcon.src = './icons/icon-stopwatch.svg';
-        timerIcon.alt = 'Timer';
+        // (опционально) таймер и метка напоминания
+        let timerIcon = null;
+        let reminderEl = null;
 
+        if (!todo.completed) {  // показываем таймер только для не выполненных
+            timerIcon = document.createElement('img');
+            timerIcon.className = 'timer-icon';
+            timerIcon.src = './icons/icon-stopwatch.svg';
+            timerIcon.alt = 'Timer';
+
+            if (todo.reminderAt) {
+                const d = new Date(todo.reminderAt);
+                const h = String(d.getHours()).padStart(2, '0');
+                const m = String(d.getMinutes()).padStart(2, '0');
+                reminderEl = document.createElement('span');
+                reminderEl.className = 'reminder-label';
+                reminderEl.textContent = '🔔 ' + h + ':' + m;
+                reminderEl.dataset.id = String(todo.id);
+            }
+        };
+
+        // кнопка удаления
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
         delBtn.className = 'todo-item-delete-button';
@@ -180,21 +208,10 @@ function render() {
         </svg>
       `;
 
-        if (todo.reminderAt) {
-            const reminder = document.createElement('span');
-            reminder.className = 'reminder-label';
-            const d = new Date(todo.reminderAt);
-            const h = String(d.getHours()).padStart(2, '0');
-            const m = String(d.getMinutes()).padStart(2, '0');
-            reminder.textContent = '🔔 ' + h + ':' + m;
-            reminder.dataset.id = todo.id;
-            li.appendChild(reminder);
-        };
-
-
         li.appendChild(checkbox);
         li.appendChild(label);
-        li.appendChild(timerIcon);
+        if (timerIcon) li.appendChild(timerIcon);
+        if (reminderEl) li.appendChild(reminderEl);
         li.appendChild(delBtn);
 
         elements.list.appendChild(li);
@@ -235,26 +252,31 @@ function handleListClick(event) {
         return;
     }
 
-    //  Таймер 
     // поставить напоминание
     const timer = target.closest('.timer-icon');
     if (timer && elements.list.contains(timer)) {
         const li = timer.closest('.todo-item');
-        const idStr = li.querySelector('.todo-item-checkbox').id.replace('todo-', '');
-        const id = Number(idStr);
+        const checkbox = li.querySelector('.todo-item-checkbox');
+        const id = Number(checkbox.id.replace('todo-', ''));
         const todo = state.todos.find(t => t.id === id);
         if (!todo) return;
 
-        const minStr = prompt("Через сколько минут напомнить?");
+        // запрет для выполненных задач
+        if (todo.completed) {
+            alert('Нельзя ставить напоминание для выполненной задачи.');
+            return;
+        }
+
+        const minStr = prompt('Через сколько минут напомнить?');
         if (minStr === null) return;
 
         const minutes = Number(minStr);
         if (!Number.isFinite(minutes) || minutes <= 0) {
-            alert("Введите положительное число минут.");
+            alert('Введите положительное число минут.');
             return;
         }
 
-        todo.reminderAt = Date.now() + minutes * 60000;
+        todo.reminderAt = Date.now() + minutes * 60000; // сохраняем время
         saveToStorage(state.todos);
         render();
         return;
@@ -285,13 +307,25 @@ function handleListClick(event) {
 function toggleTodo(id, completed) {
     state.todos = state.todos.map(todo => {
         if (todo.id === id) {
-            return { id: todo.id, title: todo.title, completed, reminderAt: todo.reminderAt };
+            return {
+                id: todo.id,
+                title: todo.title,
+                completed,
+                reminderAt: completed ? null : todo.reminderAt // сбрасывать напоминание при выполнении задачи
+            };
         }
         return todo;
     });
+
+    if (completed && reminderTimers[id]) {
+        clearTimeout(reminderTimers[id]);
+        delete reminderTimers[id];
+    };
+
     saveToStorage(state.todos);
     render();
 };
+
 
 function handleListChange(event) {
     const target = event.target;
