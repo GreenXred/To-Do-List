@@ -244,6 +244,26 @@ function removeAllTodos() {
     render();
 };
 
+function handleDeleteAllClick() {
+    if (state.todos.length === 0) {
+        return;
+    };
+
+    const ok = confirm('Удалить все задачи? Это действие нельзя отменить.');
+    if (!ok) {
+        return;
+    };
+
+    if (typeof reminderTimers === 'object' && reminderTimers) {
+        Object.values(reminderTimers).forEach(clearTimeout);
+        for (const k in reminderTimers) {
+            delete reminderTimers[k];
+        }
+    };
+
+    removeAllTodos();
+};
+
 function handleListClick(event) {
     const target = event.target;
 
@@ -444,7 +464,7 @@ async function init() {
     }
 
     if (elements.deleteAllBtn) {
-        elements.deleteAllBtn.addEventListener('click', removeAllTodos);
+        elements.deleteAllBtn.addEventListener('click', handleDeleteAllClick);
     }
 
     if (elements.list) {
@@ -460,16 +480,16 @@ async function init() {
     const stored = readFromStorage();
 
     if (stored && stored.length > 0) {
-      const migrated = stored.map(t => ({
-        ...t,
-        id: String(t.id) 
-      }));
-      setTodos(migrated);
+        const migrated = stored.map(t => ({
+            ...t,
+            id: String(t.id)
+        }));
+        setTodos(migrated);
     } else {
-      const fromApi = await fetchTodosFromAPI(20);
-      setTodos(fromApi);
+        const fromApi = await fetchTodosFromAPI(20);
+        setTodos(fromApi);
     };
-    
+
     highlightActiveFilter();
 };
 
