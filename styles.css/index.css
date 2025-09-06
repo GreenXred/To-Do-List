@@ -214,3 +214,12 @@ body.dark .todo-item .timer-icon {
 body.dark .theme-icon {
     filter: brightness(0) saturate(100%) invert(100%);
 }
+
+/* пометка задачи */
+.reminder-label {
+    margin-left: 8px;
+    font-size: 0.9em;
+    color: var(--muted);
+    cursor: pointer;
+};
+  

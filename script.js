@@ -1,6 +1,9 @@
 const apiUrl = 'https://jsonplaceholder.typicode.com/todos';
-const storageKey = 'todo-list-storage';
-const themeKey = 'todoTheme';
+const storageKey = 'todo-list-storage'; // ключ для хранения списка задач
+const themeKey = 'todoTheme'; // ключ для хранения темы
+const reminderTimers = {}; // таймеры для напоминаний
+const filterKey = 'todoFilter'; // ключ для хранения фильтра
+
 
 
 // ====== Функция переключение темы ======
@@ -66,6 +69,40 @@ function saveToStorage(todos) {
     } catch (error) {
         console.error('Ошибка сохранения в localStorage:', error);
     }
+};
+
+function scheduleReminder(todo) {
+    // если уже был таймер — удаление
+    if (reminderTimers[todo.id]) {
+        clearTimeout(reminderTimers[todo.id]);
+        delete reminderTimers[todo.id];
+    }
+
+    if (!todo.reminderAt) return;
+
+    const delay = todo.reminderAt - Date.now();
+    if (delay <= 0) {
+        alert("Пора выполнить задачу - " + todo.title);
+        todo.reminderAt = null;
+        saveToStorage(state.todos);
+        return;
+    }
+
+    const timeoutId = setTimeout(() => {
+        alert("Пора выполнить задачу - " + todo.title);
+        todo.reminderAt = null;
+        saveToStorage(state.todos);
+        render();
+        delete reminderTimers[todo.id];
+    }, delay);
+
+    reminderTimers[todo.id] = timeoutId;
+};
+
+function scheduleAllReminders() {
+    Object.values(reminderTimers).forEach(clearTimeout);
+    for (const key in reminderTimers) delete reminderTimers[key];
+    state.todos.forEach(scheduleReminder);
 };
 
 // ====== Загрузка с API (один раз, если нет сохранённых данных) ======
@@ -143,6 +180,18 @@ function render() {
         </svg>
       `;
 
+        if (todo.reminderAt) {
+            const reminder = document.createElement('span');
+            reminder.className = 'reminder-label';
+            const d = new Date(todo.reminderAt);
+            const h = String(d.getHours()).padStart(2, '0');
+            const m = String(d.getMinutes()).padStart(2, '0');
+            reminder.textContent = '🔔 ' + h + ':' + m;
+            reminder.dataset.id = todo.id;
+            li.appendChild(reminder);
+        };
+
+
         li.appendChild(checkbox);
         li.appendChild(label);
         li.appendChild(timerIcon);
@@ -152,12 +201,19 @@ function render() {
     });
 
     elements.totalSpan.textContent = String(state.todos.length);
+    scheduleAllReminders();
 };
 
 // ====== Удаление задач ======
 
 function removeTodo(id) {
     state.todos = state.todos.filter(todo => todo.id !== id);
+
+    if (reminderTimers[id]) {
+        clearTimeout(reminderTimers[id]);
+        delete reminderTimers[id];
+    };
+
     saveToStorage(state.todos);
     render();
 };
@@ -180,27 +236,48 @@ function handleListClick(event) {
     }
 
     //  Таймер 
+    // поставить напоминание
     const timer = target.closest('.timer-icon');
     if (timer && elements.list.contains(timer)) {
         const li = timer.closest('.todo-item');
-        const label = li.querySelector('.todo-item-label');
-        const taskTitle = label ? label.textContent : 'задача';
+        const idStr = li.querySelector('.todo-item-checkbox').id.replace('todo-', '');
+        const id = Number(idStr);
+        const todo = state.todos.find(t => t.id === id);
+        if (!todo) return;
 
-        const secStr = prompt('Через сколько секунд напомнить?');
-        if (secStr === null) {
-            return; // если отмена
-        }
+        const minStr = prompt("Через сколько минут напомнить?");
+        if (minStr === null) return;
 
-        const seconds = Number(secStr);
-        if (!Number.isFinite(seconds) || seconds <= 0) {
-            alert('Введите положительное число секунд.');
+        const minutes = Number(minStr);
+        if (!Number.isFinite(minutes) || minutes <= 0) {
+            alert("Введите положительное число минут.");
             return;
         }
 
-        setTimeout(() => {
-            alert('Пора выполнить задачу - ' + taskTitle);
-        }, seconds * 1000);
-    }
+        todo.reminderAt = Date.now() + minutes * 60000;
+        saveToStorage(state.todos);
+        render();
+        return;
+    };
+
+    // убрать напоминание
+    const reminderLabel = target.closest('.reminder-label');
+    if (reminderLabel && elements.list.contains(reminderLabel)) {
+        const id = Number(reminderLabel.dataset.id);
+        const todo = state.todos.find(t => t.id === id);
+        if (todo && todo.reminderAt) {
+            if (confirm("Убрать напоминание?")) {
+                todo.reminderAt = null;
+                if (reminderTimers[id]) {
+                    clearTimeout(reminderTimers[id]);
+                    delete reminderTimers[id];
+                }
+                saveToStorage(state.todos);
+                render();
+            }
+        }
+        return;
+    };
 };
 
 // ====== Переключение статуса задачи ======
@@ -268,30 +345,43 @@ function handleFormSubmit(event) {
 // ====== Инициализация ======
 
 function setFilter(next) {
-    state.filter = next;      // 'all' | 'completed' | 'pending'
+    state.filter = next;
+    localStorage.setItem(filterKey, next); // сохраняем выбор
     highlightActiveFilter();
     render();
 };
 
 function highlightActiveFilter() {
-    //  подсветка активной 
     const { filterAllBtn, filterCompletedBtn, filterPendingBtn } = elements;
     [filterAllBtn, filterCompletedBtn, filterPendingBtn].forEach(btn => {
-        if (!btn) return;
-        btn.classList.remove('is-active');
+        if (btn) btn.classList.remove('is-active');
     });
 
     if (state.filter === 'all' && elements.filterAllBtn) {
         elements.filterAllBtn.classList.add('is-active');
-    } else if (state.filter === 'completed' && elements.filterCompletedBtn) {
+    }
+
+    if (state.filter === 'completed' && elements.filterCompletedBtn) {
         elements.filterCompletedBtn.classList.add('is-active');
-    } else if (state.filter === 'pending' && elements.filterPendingBtn) {
+    }
+
+    if (state.filter === 'pending' && elements.filterPendingBtn) {
         elements.filterPendingBtn.classList.add('is-active');
     }
 };
 
+
 async function init() {
     getElements();
+
+    // сохраненный фильтр
+    const savedFilter = localStorage.getItem(filterKey);
+    if (savedFilter === 'all' || savedFilter === 'completed' || savedFilter === 'pending') {
+        state.filter = savedFilter;
+    } else {
+        state.filter = 'all'; // дефолт
+        localStorage.setItem(filterKey, 'all');
+    }
 
     // сохранённея тема
     const saved = localStorage.getItem(themeKey) || 'light';
