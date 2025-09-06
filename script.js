@@ -125,7 +125,7 @@ async function fetchTodosFromAPI(limit = 20) {
     const sliced = data.slice(0, limit);
 
     const normalized = sliced.map(item => ({
-        id: item.id,
+        id: String(item.id),
         title: item.title,
         completed: Boolean(item.completed),
         reminderAt: null
@@ -173,24 +173,27 @@ function render() {
         label.htmlFor = checkbox.id;
         label.textContent = todo.title;
 
-        // (опционально) таймер и метка напоминания
+        // таймер и метка напоминания
         let timerIcon = null;
         let reminderEl = null;
 
-        if (!todo.completed) {  // показываем таймер только для не выполненных
-            timerIcon = document.createElement('img');
-            timerIcon.className = 'timer-icon';
-            timerIcon.src = './icons/icon-stopwatch.svg';
-            timerIcon.alt = 'Timer';
-
+        if (!todo.completed) {
             if (todo.reminderAt) {
+                // напоминание уже стоит — показываем «🔔 ЧЧ:ММ»
                 const d = new Date(todo.reminderAt);
                 const h = String(d.getHours()).padStart(2, '0');
                 const m = String(d.getMinutes()).padStart(2, '0');
+
                 reminderEl = document.createElement('span');
                 reminderEl.className = 'reminder-label';
                 reminderEl.textContent = '🔔 ' + h + ':' + m;
                 reminderEl.dataset.id = String(todo.id);
+            } else {
+                // напоминания нет — показываем иконку для установки
+                timerIcon = document.createElement('img');
+                timerIcon.className = 'timer-icon';
+                timerIcon.src = './icons/icon-stopwatch.svg';
+                timerIcon.alt = 'Timer';
             }
         };
 
@@ -452,24 +455,21 @@ async function init() {
         elements.form.addEventListener('submit', handleFormSubmit);
     }
 
-    // 1)  читаем локальные данные
+    // читаем локальные данные
+
     const stored = readFromStorage();
 
     if (stored && stored.length > 0) {
-        setTodos(stored);
-        return;
-    }
-
-    // 2) Иначе грузим с сервера и сохраняем
-    try {
-        const fromApi = await fetchTodosFromAPI(20);
-        setTodos(fromApi);
-    } catch (e) {
-        console.error(e);
-        // На крайний случай — пустой список
-        setTodos([]);
-    }
-
+      const migrated = stored.map(t => ({
+        ...t,
+        id: String(t.id) 
+      }));
+      setTodos(migrated);
+    } else {
+      const fromApi = await fetchTodosFromAPI(20);
+      setTodos(fromApi);
+    };
+    
     highlightActiveFilter();
 };
 
